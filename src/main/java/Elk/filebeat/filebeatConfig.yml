@@ -1,0 +1,127 @@
+# ============================== Filebeat inputs ===============================
+
+
+
+filebeat.inputs:
+
+  - type: stdin #shell 輸入, 主要用來測試
+
+      #---- 通用屬性 , 所有 type 的 input都可使用
+    enabled: true #是否啟用 默認為true
+    fields:                   #輸入內容增加 field
+      aaa: 1  #logshtash要取值  %{[fields][aaa]}
+    tags:
+    keep_null:
+    #-- #---- 通用屬性 , 所有種類的 input都可使用
+    processors:
+      - drop_event: # 把此次輸入(一個事件) 刪除
+          when:
+            equals:
+                message: "pass"
+
+
+
+  - type: log  # 讀取文字檔案
+    paths: #路徑檔案名稱
+        - /var/log/message
+        - /var/*/*.log
+    enabled: true #是否啟用 默認為true
+    inculde_lines: ['sometext']  # 符合正規的line
+    exclude_lines: ['^DBG']      # [] 內用正規表達式 , 排除符合正規式的line
+    #--   組合起來 表示 某一行 必須包含sometext字樣, 且開頭不為DBG 才會輸入
+
+    exclude_files: ['\.gz$']  # 排除副檔名.gz 的檔案
+    multiline.pattern: ^\[    # 合併多行(line) 成為一次訊息
+    multiline.negate: false   #待補
+    multiline.match: after    #待補
+    tail_files: false
+    # Filebeat將在每個文件的末尾而不是開頭開始讀取新文件
+    # 第一次開啟設定為true, 會將 offset 指定在文件末尾, 原已有 offset 的文件不受影響
+    # 第一次運行後，建議禁用此選項，否則您可能會在文件輪換期間丟失首行。
+
+    close_inactive: 1m
+#        默認值為5m。
+#        啟用此選項後，如果在指定時間內未收穫文件，Filebeat將關閉文件
+#
+#        建議設置為大於最不經常更新日誌文件的值
+#        例如，日誌文件每隔幾秒鐘更新一次，可以安全地設置為1m。
+#        如果存在更新率差異很大的日誌文件，則可以使用具有不同值的多種配置。
+#
+#        設置close_inactive較低的值意味著文件將盡快關閉。
+#        但是，這樣做的副作用是，如果關閉收割機，則不會及時發送新的日誌。
+#
+#        設置為5分鐘，則在收割機讀取文件的最後一行之後，開始5分鐘的倒計時。
+      #  close_inactive 使文件處理程序保持打開狀態並不斷輪詢您的文件。
+
+
+    ignore_older: 24h
+      #      5m 超過此設定時間以上的文件忽略不讀取
+
+      #-- !!! 必須設置 ignore_older大於 close_inactive  --!!!
+      #
+      #        有此設定會讀取的文件分為兩類：
+      #          從未收集過的文件
+      #          收穫但未更新的文件的時間不超過 ignore_older
+
+      scan_frequency: 30s
+      #   Filebeat多久檢查一次指定用於收集的路徑中的新文件。
+      #   不建議設置此值<1s。 默認設置為10秒。
+
+      keep_null: true
+#      如果將此選項設置為true，則具有null值的字段將輸出。默認設置為false
+
+
+
+
+
+
+# ================================== General ===================================
+
+tags: ["service-X", "web-tier"] # 給這則message 增加標籤 可以用在 logstash filter , kibana搜尋
+#tags:
+#  - "service-X"
+#  - "web-tier"
+
+# ================================== Outputs ===================================
+
+#-- output 還不知道多種輸出並行的寫法
+#-- 下面的寫法只能 一種輸出
+
+
+# ------------------------------ Logstash Output -------
+
+#--  輸出給logstash
+output.logstash:
+
+  #-- The Logstash hosts
+  hosts: ["10.20.90.72:5044"] #["ip:port"]
+
+  #-- Optional SSL. By default is off.
+  #-- List of root certificates for HTTPS server verifications
+  #ssl.certificate_authorities: ["/etc/pki/root/ca.pem"]
+
+  #-- Certificate for SSL client authentication
+  #ssl.certificate: "/etc/pki/client/cert.pem"
+
+  #-- Client Certificate Key
+  #ssl.key: "/etc/pki/client/cert.key"
+#-------------------------------------console -------------------------------------------
+
+#-- 輸出在畫面上, 多用來debug
+#output.console:
+#  pretty: true
+
+# ================================= Processors =================================
+#-- filter 功能, 對訊息 新增刪除篩選
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - add_kubernetes_metadata: ~
+  - drop_fields:
+      when:
+        equals:
+          input.type: "stdin"
+      fields: ["ecs", "agent", "log","host" ]
+      ignore_missing: false

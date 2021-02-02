@@ -1,0 +1,11 @@
+registry 檔案作用 filebeat 紀錄 讀取文件到哪裡(offset)
+辨別檔案方式使用 inode (linux 系統)
+檔案位置在 /filebeat目錄/data/registry/filebeat/log.json
+內容
+{"op":"set","id":16}
+{"k":"filebeat::logs::native::67186870-64770",
+"v":{"prev_id":"","source":"/home/ppv/filebeat-7.10.1-linux-x86_64/test.log",
+"timestamp":[2061919950711,1610935927],"identifier_name":"native","id":"native::67186870-64770",
+"ttl":-1,"type":"log","FileStateOS":{"inode":67186870,"device":64770},"offset":224}}
+
+
