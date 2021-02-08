@@ -26,7 +26,10 @@ filebeat.inputs:
         - /var/log/message
         - /var/*/*.log
     enabled: true #是否啟用 默認為true
-    inculde_lines: ['sometext']  # 符合正規的line
+
+    inculde_lines: ['(?i) error |(?i) erro ']
+    # 符合正規的line, (?i): 無視大小寫正規,支援的正規式 https://www.elastic.co/guide/en/beats/filebeat/7.10/regexp-support.html
+
     exclude_lines: ['^DBG']      # [] 內用正規表達式 , 排除符合正規式的line
     #--   組合起來 表示 某一行 必須包含sometext字樣, 且開頭不為DBG 才會輸入
 
