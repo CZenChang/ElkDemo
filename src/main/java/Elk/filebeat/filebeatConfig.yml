@@ -73,8 +73,39 @@ filebeat.inputs:
       keep_null: true
 #      如果將此選項設置為true，則具有null值的字段將輸出。默認設置為false
 
+  - type: log
+    enabled: true
+    paths:
+      - /home/ppv/manager/disk/diskInfo
+    fields:
+      type: disk
+      path: /home/ppv/manager/disk/diskInfo
+    tags: ['disk']
+    include_lines: ['\d{1,3}%']
+    clean_removed: true
+    ignore_older: 24h
 
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/messages
+    fields:
+      type: systemMessage
+      path: /var/log/messages
+    tags: ['systemMessage']
+    include_lines: ['(?i)err|(?i)erro|(?i)error|(?i)critical|(?i)alert|(?i)emergency|(?i)EMERG']
+    clean_removed: true
 
+  - type: log
+    enabled: true
+    paths:
+      - /home/ppv/manager/ram/ramInfo
+    fields:
+      type: ram
+      path: /home/ppv/manager/ram/ramInfo
+    tags: ['ram']
+    include_lines: ['Mem:']
+    clean_removed: true
 
 
 
